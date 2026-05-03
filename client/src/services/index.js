@@ -13,7 +13,8 @@ export const projectService = {
   getProject: (projectId) => api.get(`/projects/${projectId}`),
   updateProject: (projectId, data) => api.put(`/projects/${projectId}`, data),
   addMember: (projectId, userId) => api.post(`/projects/${projectId}/members`, { userId }),
-  removeMember: (projectId, userId) => api.delete(`/projects/${projectId}/members/${userId}`)
+  removeMember: (projectId, userId) => api.delete(`/projects/${projectId}/members/${userId}`),
+  deleteProject: (projectId) => api.delete(`/projects/${projectId}`)
 };
 
 export const taskService = {

@@ -3,15 +3,52 @@ import { Button, Modal, Input, Select, Alert } from './UI';
 import { projectService, authService } from '../services/index';
 import '../styles/project.css';
 
-export const ProjectCard = ({ project, onProjectClick }) => {
+export const ProjectCard = ({ project, onProjectClick, onEdit, onDelete, isOwner, isAdmin }) => {
   const taskCount = project.taskCount || 0;
   const memberCount = project.members?.length || 0;
+  const [showMenu, setShowMenu] = useState(false);
+  const canManage = isOwner || isAdmin;
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    onEdit && onEdit(project);
+    setShowMenu(false);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this project and all its tasks?')) {
+      onDelete && onDelete(project.id);
+    }
+    setShowMenu(false);
+  };
 
   return (
     <div className="project-card" onClick={() => onProjectClick(project)}>
       <div className="project-header">
-        <h3>{project.name}</h3>
-        <span className="member-badge">{memberCount} members</span>
+        <div>
+          <h3>{project.name}</h3>
+          <span className="member-badge">{memberCount} members</span>
+        </div>
+        {canManage && (
+          <div className="project-card-menu">
+            <button
+              className="menu-trigger"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+            >
+              ⋮
+            </button>
+            {showMenu && (
+              <div className="menu-dropdown">
+                <button onClick={handleEditClick} className="menu-item edit">Edit</button>
+                <button onClick={handleDeleteClick} className="menu-item delete">Delete</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <p className="project-desc">{project.description || 'No description'}</p>
       <div className="project-stats">
@@ -24,11 +61,19 @@ export const ProjectCard = ({ project, onProjectClick }) => {
   );
 };
 
-export const ProjectForm = ({ isOpen, onClose, onSubmit }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+export const ProjectForm = ({ isOpen, onClose, onSubmit, initialProject = null }) => {
+  const [name, setName] = useState(initialProject?.name || '');
+  const [description, setDescription] = useState(initialProject?.description || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(initialProject?.name || '');
+      setDescription(initialProject?.description || '');
+      setError('');
+    }
+  }, [isOpen, initialProject]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +93,7 @@ export const ProjectForm = ({ isOpen, onClose, onSubmit }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Project">
+    <Modal isOpen={isOpen} onClose={onClose} title={initialProject ? 'Edit Project' : 'Create New Project'}>
       <form onSubmit={handleSubmit} className="form">
         {error && <Alert type="error">{error}</Alert>}
 
@@ -74,7 +119,7 @@ export const ProjectForm = ({ isOpen, onClose, onSubmit }) => {
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Project'}
+            {loading ? (initialProject ? 'Saving...' : 'Creating...') : (initialProject ? 'Save Changes' : 'Create Project')}
           </Button>
         </div>
       </form>

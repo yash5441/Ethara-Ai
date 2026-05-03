@@ -15,6 +15,14 @@
       "password": "$2a$10$OUaNCEK5Ri9ySN8PSjau0.fNvmyuGEe2ddcsYdynqABwon6Rewbh6",
       "role": "member",
       "createdAt": "2026-05-03T09:12:12.869Z"
+    },
+    {
+      "id": "5012bfd7-9fb4-4a1f-bbda-9567d568dbd2",
+      "name": "yash",
+      "email": "yash.mittal.4567@gmail.com",
+      "password": "$2a$10$xdcnFsRiKTtOy2ZZsx33pudTcUWrTHUyxhADKOsazdx0KQ8mS1fZi",
+      "role": "member",
+      "createdAt": "2026-05-03T15:20:15.264Z"
     }
   ],
   "projects": [

@@ -14,6 +14,10 @@ const enrichTask = (task) => {
   };
 };
 
+const isProjectOwner = (project, userId) => project.members.some(member => member.userId === userId && member.role === 'owner');
+
+const canManageProjectTasks = (project, user) => user.role === 'admin' || isProjectOwner(project, user.userId);
+
 export const createTask = async (req, res, next) => {
   try {
     const { projectId } = req.params;
@@ -144,8 +148,16 @@ export const updateTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found' });
     }
 
+    const isOwnerOrAdmin = canManageProjectTasks(project, req.user);
+    const isAssignee = task.assignedTo === req.user.userId;
+
+    if (!isOwnerOrAdmin && !isAssignee) {
+      return res.status(403).json({ error: 'You can only update tasks assigned to you' });
+    }
+
     if (title !== undefined) task.title = title;
     if (description !== undefined) task.description = description;
+
     if (status !== undefined) {
       if (!allowedStatuses.includes(status)) {
         return res.status(400).json({ error: 'Invalid task status' });
@@ -153,15 +165,34 @@ export const updateTask = async (req, res, next) => {
 
       task.status = status;
     }
-    if (priority !== undefined) task.priority = priority;
+
+    if (priority !== undefined) {
+      if (!isOwnerOrAdmin) {
+        return res.status(403).json({ error: 'Only admins or project owners can change priority' });
+      }
+
+      task.priority = priority;
+    }
+
     if (assignedTo !== undefined) {
+      if (!isOwnerOrAdmin) {
+        return res.status(403).json({ error: 'Only admins or project owners can reassign tasks' });
+      }
+
       if (assignedTo && !project.members.some(member => member.userId === assignedTo)) {
         return res.status(400).json({ error: 'Assigned user is not a project member' });
       }
 
       task.assignedTo = assignedTo || null;
     }
-    if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate).toISOString() : null;
+
+    if (dueDate !== undefined) {
+      if (!isOwnerOrAdmin && !isAssignee) {
+        return res.status(403).json({ error: 'Only admins, owners, or the assigned member can change due dates' });
+      }
+
+      task.dueDate = dueDate ? new Date(dueDate).toISOString() : null;
+    }
     
     task.updatedAt = new Date().toISOString();
 
@@ -183,11 +214,10 @@ export const deleteTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const isMember = project.members.some(m => m.userId === req.user.userId);
-    const isAdmin = req.user.role === 'admin';
+    const isOwnerOrAdmin = canManageProjectTasks(project, req.user);
 
-    if (!isMember && !isAdmin) {
-      return res.status(403).json({ error: 'You are not a member of this project' });
+    if (!isOwnerOrAdmin) {
+      return res.status(403).json({ error: 'Only admins or project owners can delete tasks' });
     }
 
     const taskIndex = db.data.tasks.findIndex(item => item.id === taskId && item.projectId === projectId);

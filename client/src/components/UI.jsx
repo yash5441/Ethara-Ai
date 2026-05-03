@@ -72,3 +72,20 @@ export const Alert = ({ type = 'info', children }) => {
 export const Spinner = () => {
   return <div className="spinner"></div>;
 };
+
+export const Drawer = ({ isOpen, onClose, title, children, width = '450px' }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="drawer-overlay" onClick={onClose}></div>
+      <div className="drawer" style={{ width }}>
+        <div className="drawer-header">
+          <h2>{title}</h2>
+          <button className="drawer-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="drawer-body">{children}</div>
+      </div>
+    </>
+  );
+};

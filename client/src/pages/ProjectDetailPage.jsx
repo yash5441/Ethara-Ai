@@ -4,10 +4,11 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { projectService, taskService } from '../services/index';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
-import { TaskCard, TaskForm } from '../components/TaskComponents';
-import { AddMemberForm } from '../components/ProjectComponents';
+import { TaskCard, TaskForm, TaskDetailDrawer } from '../components/TaskComponents';
+import { AddMemberForm, ProjectForm } from '../components/ProjectComponents';
 import { Button, Alert, Spinner, Badge } from '../components/UI';
 import '../styles/project-detail.css';
+import '../styles/drawer.css';
 
 export const ProjectDetailPage = () => {
   const { projectId } = useParams();
@@ -19,7 +20,9 @@ export const ProjectDetailPage = () => {
   const [error, setError] = useState('');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
+  const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
@@ -83,6 +86,28 @@ export const ProjectDetailPage = () => {
     }
   };
 
+  const handleUpdateProject = async (data) => {
+    try {
+      const response = await projectService.updateProject(projectId, data);
+      setProject(response.data);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!window.confirm('Delete this project and all of its tasks?')) {
+      return;
+    }
+
+    try {
+      await projectService.deleteProject(projectId);
+      navigate('/projects');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete project');
+    }
+  };
+
   const handleRemoveMember = async (member) => {
     const memberLabel = member.userName || member.userEmail || member.userId;
 
@@ -101,6 +126,14 @@ export const ProjectDetailPage = () => {
   const isOwner = project?.members.some(m => m.userId === user?.id && m.role === 'owner');
   const isMember = project?.members.some(m => m.userId === user?.id);
   const isAdmin = user?.role === 'admin';
+  const canCreateTasks = isMember || isAdmin;
+  const canUpdateTasks = isAdmin || isOwner;
+
+  const getTaskAccess = (task) => {
+    const isAssignee = task.assignedTo === user?.id;
+    const canEdit = isAdmin || isOwner || isAssignee;
+    return { canEdit, isAssignee };
+  };
 
   const filteredTasks = filterStatus === 'all' 
     ? tasks 
@@ -143,9 +176,15 @@ export const ProjectDetailPage = () => {
           </div>
           <div className="project-actions">
             {(isOwner || isAdmin) && (
-              <Button onClick={() => setShowMemberForm(true)}>+ Add Member</Button>
+              <>
+                <Button variant="secondary" onClick={() => setShowProjectForm(true)}>Edit Project</Button>
+                <Button onClick={() => setShowMemberForm(true)}>+ Add Member</Button>
+                <Button variant="secondary" onClick={handleDeleteProject}>Delete Project</Button>
+              </>
             )}
-            <Button onClick={() => setShowTaskForm(true)}>+ New Task</Button>
+            <Button onClick={() => setShowTaskForm(true)} disabled={!canCreateTasks}>
+              + New Task
+            </Button>
           </div>
         </div>
 
@@ -235,24 +274,28 @@ export const ProjectDetailPage = () => {
 
           <div className="tasks-grid">
             {filteredTasks.length > 0 ? (
-              filteredTasks.map(task => (
-                <div key={task.id} className="task-wrapper">
-                  <TaskCard
-                    task={task}
-                    onTaskClick={() => setEditingTask(task)}
-                    projectMembers={project.members}
-                  />
-                  {isOwner && (
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDeleteTask(task.id)}
-                      title="Delete task"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              ))
+              filteredTasks.map(task => {
+                const { canEdit, isAssignee } = getTaskAccess(task);
+                return (
+                  <div key={task.id} className="task-wrapper">
+                    <TaskCard
+                      task={task}
+                      onTaskClick={() => setSelectedTask(task)}
+                      projectMembers={project.members}
+                      canEdit={canEdit}
+                    />
+                    {(isOwner || isAdmin) && (
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteTask(task.id)}
+                        title="Delete task"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                );
+              })
             ) : (
               <p className="empty-message">No tasks in this category</p>
             )}
@@ -275,6 +318,24 @@ export const ProjectDetailPage = () => {
           onClose={() => setShowMemberForm(false)}
           onSubmit={handleAddMember}
           currentMembers={project.members}
+        />
+
+        <ProjectForm
+          isOpen={showProjectForm}
+          onClose={() => setShowProjectForm(false)}
+          onSubmit={handleUpdateProject}
+          initialProject={project}
+        />
+
+        <TaskDetailDrawer
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          task={selectedTask}
+          onSave={(data) => handleUpdateTask(data)}
+          projectMembers={project.members}
+          canEdit={selectedTask ? getTaskAccess(selectedTask).canEdit : false}
+          isAdmin={isAdmin}
+          isOwner={isOwner}
         />
       </div>
     </>
