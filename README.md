@@ -258,6 +258,19 @@ rm -rf node_modules
 npm install
 ```
 
+## Railway Deployment 🚆
+
+This app now runs as a single Railway service from the backend:
+
+- Root directory: `server`
+- Build command: `npm install && npm install --prefix ../client && npm run build --prefix ../client`
+- Start command: `npm start`
+- Environment variables: Railway provides `PORT`. Set `JWT_SECRET` if you want a custom secret.
+
+The Express server serves the API and the built React app from `client/dist`.
+
+Important note: the current backend uses file-based storage, so data can reset when the Railway service restarts or redeploys. If you need persistence, switch the backend to an external database or attach persistent storage.
+
 ## License 📄
 
 This project is open source and available for educational purposes.
