@@ -260,10 +260,10 @@ npm install
 
 ## Railway Deployment 🚆
 
-This app now runs as a single Railway service from the backend:
+This app now runs as a single Railway service from the repo root:
 
-- Root directory: `server`
-- Build command: `npm install && npm install --prefix ../client && npm run build --prefix ../client`
+- Root directory: `.`
+- Build command: `npm run build`
 - Start command: `npm start`
 - Environment variables: Railway provides `PORT`. Set `JWT_SECRET` if you want a custom secret.
 
