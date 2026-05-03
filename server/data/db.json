@@ -1,0 +1,54 @@
+{
+  "users": [
+    {
+      "id": "user-1",
+      "name": "Admin User",
+      "email": "admin@atlas.local",
+      "password": "$2a$10$Gw1434FSNn2euxuaUCcMoufvTbXgsCAqUZcl7SZVkc6HG7puisE9.",
+      "role": "admin",
+      "createdAt": "2026-05-03T09:12:12.808Z"
+    },
+    {
+      "id": "user-2",
+      "name": "Lena Member",
+      "email": "lena@atlas.local",
+      "password": "$2a$10$OUaNCEK5Ri9ySN8PSjau0.fNvmyuGEe2ddcsYdynqABwon6Rewbh6",
+      "role": "member",
+      "createdAt": "2026-05-03T09:12:12.869Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj-1",
+      "name": "Website Redesign",
+      "description": "Redesign company website with modern UI",
+      "createdBy": "user-1",
+      "members": [
+        {
+          "userId": "user-1",
+          "role": "owner"
+        },
+        {
+          "userId": "user-2",
+          "role": "member"
+        }
+      ],
+      "createdAt": "2026-05-03T09:12:12.869Z",
+      "updatedAt": "2026-05-03T09:12:12.869Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1",
+      "projectId": "proj-1",
+      "title": "Create Wireframes",
+      "description": "Design wireframes for new website",
+      "assignedTo": "user-2",
+      "status": "in-progress",
+      "priority": "high",
+      "dueDate": "2026-05-08T09:12:12.869Z",
+      "createdAt": "2026-05-03T09:12:12.869Z",
+      "updatedAt": "2026-05-03T09:12:12.869Z"
+    }
+  ]
+}

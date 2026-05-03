@@ -1,0 +1,112 @@
+/* Task Card - Jira Style */
+.task-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #0ea5e9, #8b5cf6);
+}
+
+.task-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.task-card.overdue {
+  border-left: 3px solid #ef4444;
+}
+
+.task-card.overdue::before {
+  background: #ef4444;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.task-header h3 {
+  font-size: 15px;
+  color: #1e293b;
+  flex: 1;
+  word-break: break-word;
+  font-weight: 600;
+}
+
+.task-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.task-assignee {
+  background-color: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.task-due {
+  color: #64748b;
+}
+
+.task-due.overdue-text {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.task-priority {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Task Form Modal */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .tasks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-card {
+    margin-bottom: 12px;
+  }
+}

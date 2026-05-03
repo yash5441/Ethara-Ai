@@ -1,0 +1,12 @@
+{
+  "watch": [
+    "src"
+  ],
+  "ext": "js,mjs,json",
+  "ignore": [
+    "data/db.json",
+    "package-lock.json",
+    ".env",
+    "node_modules"
+  ]
+}

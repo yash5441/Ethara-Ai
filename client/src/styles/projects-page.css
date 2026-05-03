@@ -1,0 +1,10 @@
+/* Project Detail Page (Additional) */
+.projects-page {
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .projects-container {
+    padding: 20px;
+  }
+}
