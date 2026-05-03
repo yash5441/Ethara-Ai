@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { format, formatDistanceToNow } from 'date-fns';
 import { projectService, taskService } from '../services/index';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
@@ -82,12 +83,32 @@ export const ProjectDetailPage = () => {
     }
   };
 
+  const handleRemoveMember = async (member) => {
+    const memberLabel = member.userName || member.userEmail || member.userId;
+
+    if (!window.confirm(`Remove ${memberLabel} from this project?`)) {
+      return;
+    }
+
+    try {
+      const response = await projectService.removeMember(projectId, member.userId);
+      setProject(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to remove member');
+    }
+  };
+
   const isOwner = project?.members.some(m => m.userId === user?.id && m.role === 'owner');
   const isMember = project?.members.some(m => m.userId === user?.id);
+  const isAdmin = user?.role === 'admin';
 
   const filteredTasks = filterStatus === 'all' 
     ? tasks 
     : tasks.filter(t => t.status === filterStatus);
+
+  const timelineTasks = [...tasks]
+    .filter(task => task.dueDate)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
   if (loading) {
     return (
@@ -121,7 +142,7 @@ export const ProjectDetailPage = () => {
             <p>{project.description}</p>
           </div>
           <div className="project-actions">
-            {isOwner && (
+            {(isOwner || isAdmin) && (
               <Button onClick={() => setShowMemberForm(true)}>+ Add Member</Button>
             )}
             <Button onClick={() => setShowTaskForm(true)}>+ New Task</Button>
@@ -136,10 +157,21 @@ export const ProjectDetailPage = () => {
             <ul className="members-list">
               {project.members.map(member => (
                 <li key={member.userId}>
-                  <span>{member.userName}</span>
-                  <Badge variant={member.role === 'owner' ? 'warning' : 'default'}>
-                    {member.role}
-                  </Badge>
+                  <div className="member-details">
+                    <span className="member-name">{member.userName || member.userEmail || member.userId}</span>
+                    <Badge variant={member.role === 'owner' ? 'warning' : 'default'}>
+                      {member.role}
+                    </Badge>
+                  </div>
+                  {(isOwner || isAdmin) && member.role !== 'owner' && (
+                    <button
+                      type="button"
+                      className="remove-member-btn"
+                      onClick={() => handleRemoveMember(member)}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -152,7 +184,40 @@ export const ProjectDetailPage = () => {
               <li>✅ Completed: {tasks.filter(t => t.status === 'completed').length}</li>
               <li>⚡ In Progress: {tasks.filter(t => t.status === 'in-progress').length}</li>
               <li>⏳ Pending: {tasks.filter(t => t.status === 'pending').length}</li>
+              <li>⚠️ Overdue: {tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed').length}</li>
             </ul>
+          </div>
+
+          <div className="info-box">
+            <h3>Task Timeline</h3>
+            {timelineTasks.length > 0 ? (
+              <ul className="timeline-list">
+                {timelineTasks.map(task => {
+                  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+
+                  return (
+                    <li key={task.id} className={`timeline-item ${isOverdue ? 'overdue' : ''}`}>
+                      <div className="timeline-main">
+                        <strong>{task.title}</strong>
+                        <span>{task.assignedToName || 'Unassigned'}</span>
+                      </div>
+                      <div className="timeline-meta">
+                        <Badge variant={isOverdue ? 'error' : 'default'}>
+                          {isOverdue ? 'Overdue' : task.status}
+                        </Badge>
+                        <span>
+                          {task.dueDate
+                            ? `${format(new Date(task.dueDate), 'MMM d, yyyy')} · ${formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}`
+                            : 'No due date'}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="empty-message">Add due dates to tasks to build a timeline.</p>
+            )}
           </div>
         </div>
 

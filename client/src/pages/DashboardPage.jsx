@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, formatDistanceToNow } from 'date-fns';
 import { projectService, taskService } from '../services/index';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
@@ -70,6 +71,10 @@ export const DashboardPage = () => {
 
   const recentTasks = tasks.slice(-5).reverse();
   const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed');
+  const timelineTasks = [...tasks]
+    .filter(task => task.dueDate)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    .slice(0, 8);
 
   return (
     <>
@@ -138,6 +143,36 @@ export const DashboardPage = () => {
               </ul>
             ) : (
               <p>No tasks yet</p>
+            )}
+          </div>
+
+          <div className="dashboard-card">
+            <h2>🗓️ Task Timeline</h2>
+            {timelineTasks.length > 0 ? (
+              <ul className="task-list timeline-list">
+                {timelineTasks.map(task => {
+                  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+
+                  return (
+                    <li key={task.id} className={`task-item timeline-item ${isOverdue ? 'overdue' : ''}`}>
+                      <div className="task-item-main">
+                        <span className="task-title">{task.title}</span>
+                        <span className="task-due-date">
+                          {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      <div className="task-item-meta">
+                        <span className={`task-status ${task.status}`}>{task.status}</span>
+                        <span className={`task-overdue-pill ${isOverdue ? 'overdue' : ''}`}>
+                          {isOverdue ? 'Overdue' : formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p>No dated tasks yet</p>
             )}
           </div>
         </div>

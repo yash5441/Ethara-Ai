@@ -1,5 +1,21 @@
 import { db } from '../utils/db.js';
 
+const enrichMember = (member) => {
+  const user = db.data.users.find(item => item.id === member.userId);
+
+  return {
+    ...member,
+    userName: user?.name || 'Unknown user',
+    userEmail: user?.email || ''
+  };
+};
+
+const enrichProject = (project) => ({
+  ...project,
+  members: project.members.map(enrichMember),
+  taskCount: db.data.tasks.filter(task => task.projectId === project.id).length
+});
+
 export const createProject = async (req, res, next) => {
   try {
     const { name, description } = req.body;
@@ -26,7 +42,7 @@ export const createProject = async (req, res, next) => {
     db.data.projects.push(project);
     await db.write();
 
-    res.status(201).json(project);
+    res.status(201).json(enrichProject(project));
   } catch (error) {
     next(error);
   }
@@ -47,12 +63,7 @@ export const getProjects = async (req, res, next) => {
       );
     }
 
-    const enriched = projects.map(project => ({
-      ...project,
-      taskCount: db.data.tasks.filter(task => task.projectId === project.id).length
-    }));
-
-    res.json(enriched);
+    res.json(projects.map(enrichProject));
   } catch (error) {
     next(error);
   }
@@ -75,10 +86,7 @@ export const getProject = async (req, res, next) => {
       return res.status(403).json({ error: 'You are not a member of this project' });
     }
 
-    res.json({
-      ...project,
-      taskCount: db.data.tasks.filter(task => task.projectId === projectId).length
-    });
+    res.json(enrichProject(project));
   } catch (error) {
     next(error);
   }
@@ -108,7 +116,7 @@ export const updateProject = async (req, res, next) => {
 
     await db.write();
 
-    res.json(project);
+    res.json(enrichProject(project));
   } catch (error) {
     next(error);
   }
@@ -150,7 +158,7 @@ export const addMember = async (req, res, next) => {
     project.updatedAt = new Date().toISOString();
     await db.write();
 
-    res.json(project);
+    res.json(enrichProject(project));
   } catch (error) {
     next(error);
   }
@@ -186,7 +194,7 @@ export const removeMember = async (req, res, next) => {
     project.updatedAt = new Date().toISOString();
     await db.write();
 
-    res.json(project);
+    res.json(enrichProject(project));
   } catch (error) {
     next(error);
   }

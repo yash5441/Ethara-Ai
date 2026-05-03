@@ -1,9 +1,23 @@
 import { db } from '../utils/db.js';
 
+const allowedStatuses = ['pending', 'in-progress', 'completed', 'on-hold'];
+
+const enrichTask = (task) => {
+  const assignedUser = task.assignedTo
+    ? db.data.users.find(user => user.id === task.assignedTo)
+    : null;
+
+  return {
+    ...task,
+    assignedToName: assignedUser?.name || null,
+    assignedToEmail: assignedUser?.email || null
+  };
+};
+
 export const createTask = async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const { title, description, assignedTo, priority, dueDate } = req.body;
+    const { title, description, assignedTo, priority, status, dueDate } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'Task title is required' });
@@ -24,13 +38,17 @@ export const createTask = async (req, res, next) => {
       return res.status(400).json({ error: 'Assigned user is not a project member' });
     }
 
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid task status' });
+    }
+
     const task = {
       id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       projectId,
       title,
       description: description || '',
       assignedTo: assignedTo || null,
-      status: 'pending',
+      status: status || 'pending',
       priority: priority || 'medium',
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       createdAt: new Date().toISOString(),
@@ -40,7 +58,7 @@ export const createTask = async (req, res, next) => {
     db.data.tasks.push(task);
     await db.write();
 
-    res.status(201).json(task);
+    res.status(201).json(enrichTask(task));
   } catch (error) {
     next(error);
   }
@@ -65,7 +83,7 @@ export const getTasks = async (req, res, next) => {
 
     const tasks = db.data.tasks.filter(task => task.projectId === projectId).sort((a, b) => 
       new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    ).map(enrichTask);
 
     res.json(tasks);
   } catch (error) {
@@ -96,7 +114,7 @@ export const getTask = async (req, res, next) => {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    res.json(task);
+    res.json(enrichTask(task));
   } catch (error) {
     next(error);
   }
@@ -128,16 +146,28 @@ export const updateTask = async (req, res, next) => {
 
     if (title !== undefined) task.title = title;
     if (description !== undefined) task.description = description;
-    if (status !== undefined) task.status = status;
+    if (status !== undefined) {
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Invalid task status' });
+      }
+
+      task.status = status;
+    }
     if (priority !== undefined) task.priority = priority;
-    if (assignedTo !== undefined) task.assignedTo = assignedTo;
+    if (assignedTo !== undefined) {
+      if (assignedTo && !project.members.some(member => member.userId === assignedTo)) {
+        return res.status(400).json({ error: 'Assigned user is not a project member' });
+      }
+
+      task.assignedTo = assignedTo || null;
+    }
     if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate).toISOString() : null;
     
     task.updatedAt = new Date().toISOString();
 
     await db.write();
 
-    res.json(task);
+    res.json(enrichTask(task));
   } catch (error) {
     next(error);
   }

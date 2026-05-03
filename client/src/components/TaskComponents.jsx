@@ -19,6 +19,8 @@ const priorityColors = {
 
 export const TaskCard = ({ task, onTaskClick, projectMembers }) => {
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+  const fallbackAssignee = projectMembers?.find(member => member.userId === task.assignedTo);
+  const assignedToName = task.assignedToName || fallbackAssignee?.userName || fallbackAssignee?.userId;
 
   return (
     <div className={`task-card ${isOverdue ? 'overdue' : ''}`} onClick={() => onTaskClick(task)}>
@@ -32,8 +34,8 @@ export const TaskCard = ({ task, onTaskClick, projectMembers }) => {
       <div className="task-meta">
         <Badge variant={priorityColors[task.priority]}>{task.priority}</Badge>
 
-        {task.assignedToName && (
-          <div className="task-assignee">👤 {task.assignedToName}</div>
+        {assignedToName && (
+          <div className="task-assignee">👤 {assignedToName}</div>
         )}
 
         {task.dueDate && (
